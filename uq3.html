@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>118 Merivale St to The University of Queensland</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.js"
+        integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60=" crossorigin="anonymous"></script>
+    <style>
+        #map {
+            height: 100%;
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div id="map"></div>
+    <script
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB9N5_30LTcgi8u-lGz55Ee4d_kIJDwElQ&callback=initMap&v=weekly"
+        defer></script>
+    <script>
+        // from: https://developers.google.com/maps/documentation/javascript/examples/marker-simple?hl=zh-tw#maps_marker_simple-javascript
+
+        function initMap() {
+            // from: https://medium.com/unalai/%E5%AF%AB%E7%B5%A6%E7%B4%94%E5%89%8D%E7%AB%AF-%E8%AE%93-google-sheets-%E7%95%B6%E4%BD%A0%E7%9A%84%E5%BE%8C%E7%AB%AF%E5%AE%8C%E6%88%90%E5%AF%AB%E5%85%A5%E5%8A%9F%E8%83%BD-715799e5e013
+
+            function change(tString) {
+                //let tString = '-27.4808226,153.0200533,"Hotel,scape-merivale"';
+                let tList = [];
+                let tLength = tString.length;
+                let iLeft = tString.indexOf("\"");
+                while (iLeft != -1) {
+                    iRight = tString.indexOf('"', iLeft + 1);
+                    temp = (tString.substring(iLeft, iRight).replace(",", "，"));
+                    tString = tString.substring(0, iLeft) + temp + tString.substring(iRight);
+                    iLeft = tString.indexOf('"', iRight + 1);
+                }
+                tList = tString.split(',');
+                tList = tList.map(e => {
+                    if (e.indexOf("，")) e = e.replace('"', '').replace("，", ",").replace('"', '');
+                    return e;
+                });
+                return tList;
+            }
+            //let tString = '-27.4808226,153.0200533,"Hotel,scape-merivale"';
+            let f = fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vSfJlAAp6QbvokRXgTp_zKg_2JJo-4sVeks3lxAB7E4QAFwn_t1ouhX0Ld-XzOMn8y-0OhxxCFfLhM5/pub?output=csv&widget=true&amp;headers=false");
+            f.then(function (response) {
+                return response.text();
+                    
+                    
+                }).then(function (data) {
+                    let result = data.split(/\r?\n|\r/).map(function (e) {
+                        return e;
+                    }
+                    )
+                    for (let i = 1; i < result.length; i++) {
+                        result[i - 1] = change(result[i]);
+                    }
+                    result.pop();
+                    return result;
+                }).then(function(result2){
+                    let tourStops = result2;
+                    const map = new google.maps.Map(document.getElementById("map"), {
+                        zoom: 12,
+                        center: { lat: -27.4975028, lng: 153.0136905 },
+                    });
+
+                    const infoWindow = new google.maps.InfoWindow();
+
+                    // Create the markers.
+                    tourStops.forEach(function (items, i) {
+                        let latlat = Number(items[0]);
+                        let lnglng = Number(items[1]);
+                        console.log(latlat, lnglng, typeof (latlat), typeof (lnglng));
+                        const myLatLng = { lat: latlat, lng: lnglng };
+                        const marker = new google.maps.Marker({
+                            //position:`{lat:${items[0]},lng:${items[1]}}`,
+                            //position:{ lat: -27.4975028, lng: 153.0136905 },
+                            position: myLatLng,
+                            //lat:items[0],lng:items[1],
+                            map,
+                            title: `${i + 1}. ${items[2]}`,
+                            label: `${i + 1}`,
+                            optimized: false,
+                        });
+
+                        // Add a click listener for each marker, and set up the info window.
+                        marker.addListener("click", () => {
+                            //infoWindow.close();
+                            infoWindow.setContent(marker.getTitle());
+                            infoWindow.open(marker.getMap(), marker);
+                        });
+                    });
+                });
+        }
+        window.initMap = initMap;
+    </script>
+</body>
+
+</html>
